@@ -37,11 +37,28 @@ export const env = {
 	get googleClientSecret(): string | undefined {
 		return getEnvValue("GOOGLE_CLIENT_SECRET");
 	},
+	get googleTestToken(): string | undefined {
+		return getEnvValue("GOOGLE_TEST_TOKEN");
+	},
+	get googleTestUserEmail(): string | undefined {
+		return getEnvValue("GOOGLE_TEST_USER_EMAIL");
+	},
+	get googleTestUserId(): string | undefined {
+		return getEnvValue("GOOGLE_TEST_USER_ID");
+	},
+	get googleTestUserName(): string | undefined {
+		return getEnvValue("GOOGLE_TEST_USER_NAME");
+	},
+	get googleTestUserAvatar(): string | undefined {
+		return getEnvValue("GOOGLE_TEST_USER_AVATAR");
+	},
 	get frontendUrl(): string {
 		return getEnvValue("FRONTEND_URL") ?? "http://localhost:3000";
 	},
 	get baseUrl(): string {
-		return getEnvValue("BASE_URL") ?? `http://localhost:${process.env.PORT ?? 4000}`;
+		return (
+			getEnvValue("BASE_URL") ?? `http://localhost:${process.env.PORT ?? 4000}`
+		);
 	},
 	get broadcastIntervalMs(): number {
 		return Number(process.env.BROADCAST_INTERVAL_MS ?? 15000);

@@ -75,6 +75,8 @@ Exchanges a Google ID token for a signed JWT and user payload. Requires Google O
 - **Failure Codes**
   - `400`: Invalid or missing token payload.
   - `500`: Google OAuth not configured via env vars.
+- **Local Testing**
+  - Provide `GOOGLE_TEST_TOKEN` (and optional `GOOGLE_TEST_USER_*` overrides) in `.env` to bypass Google verification and receive a signed JWT for that synthetic user.
 
 ## Chats
 

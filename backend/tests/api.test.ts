@@ -51,7 +51,9 @@ describe("Chat endpoints", () => {
 
 	it("creates, lists, updates, and deletes a chat", async () => {
 		const createPayload = { firstName: "Ada", lastName: "Lovelace" };
-		const createResponse = await request(app).post("/api/chats").send(createPayload);
+		const createResponse = await request(app)
+			.post("/api/chats")
+			.send(createPayload);
 
 		expect(createResponse.status).toBe(201);
 		expect(createResponse.body.firstName).toBe("Ada");
@@ -63,17 +65,23 @@ describe("Chat endpoints", () => {
 		expect(listResponse.status).toBe(200);
 		expect(listResponse.body).toHaveLength(1);
 
-		const messagesResponse = await request(app).get(`/api/chats/${chatId}/messages`);
+		const messagesResponse = await request(app).get(
+			`/api/chats/${chatId}/messages`
+		);
 		expect(messagesResponse.status).toBe(200);
 		expect(messagesResponse.body).toEqual([]);
 
-		const updatePayload = { metadata: { avatarUrl: "https://example.com/avatar.png" } };
+		const updatePayload = {
+			metadata: { avatarUrl: "https://example.com/avatar.png" },
+		};
 		const updateResponse = await request(app)
 			.put(`/api/chats/${chatId}`)
 			.send(updatePayload);
 
 		expect(updateResponse.status).toBe(200);
-		expect(updateResponse.body.metadata.avatarUrl).toBe("https://example.com/avatar.png");
+		expect(updateResponse.body.metadata.avatarUrl).toBe(
+			"https://example.com/avatar.png"
+		);
 
 		const deleteResponse = await request(app).delete(`/api/chats/${chatId}`);
 		expect(deleteResponse.status).toBe(204);
@@ -83,7 +91,10 @@ describe("Chat endpoints", () => {
 	});
 
 	it("creates and updates messages for a chat", async () => {
-		const chat = await ChatModel.create({ firstName: "Alan", lastName: "Turing" });
+		const chat = await ChatModel.create({
+			firstName: "Alan",
+			lastName: "Turing",
+		});
 
 		const messagePayload = {
 			text: "Hello there",
@@ -150,7 +161,10 @@ describe("Auth endpoint", () => {
 		expect(response.body.token).toBeTypeOf("string");
 		expect(response.body.user.email).toBe("user@example.com");
 
-		const decoded = jwt.verify(response.body.token, env.jwtSecret) as jwt.JwtPayload;
+		const decoded = jwt.verify(
+			response.body.token,
+			env.jwtSecret
+		) as jwt.JwtPayload;
 		expect(decoded.email).toBe("user@example.com");
 
 		const userCount = await UserModel.countDocuments();
@@ -168,5 +182,38 @@ describe("Auth endpoint", () => {
 
 		expect(response.status).toBe(400);
 		expect(response.body.message).toBe("Invalid Google token");
+	});
+
+	it("allows authentication with configured test token", async () => {
+		const originalEnv = {
+			token: process.env.GOOGLE_TEST_TOKEN,
+			email: process.env.GOOGLE_TEST_USER_EMAIL,
+			userId: process.env.GOOGLE_TEST_USER_ID,
+			name: process.env.GOOGLE_TEST_USER_NAME,
+			avatar: process.env.GOOGLE_TEST_USER_AVATAR,
+		};
+
+		process.env.GOOGLE_TEST_TOKEN = "test-token";
+		process.env.GOOGLE_TEST_USER_EMAIL = "test.user@example.com";
+		process.env.GOOGLE_TEST_USER_ID = "test-google-id";
+		process.env.GOOGLE_TEST_USER_NAME = "Test User";
+		process.env.GOOGLE_TEST_USER_AVATAR = "https://example.com/test-avatar.png";
+
+		try {
+			const response = await request(app)
+				.post("/api/auth/google")
+				.send({ token: "test-token" });
+
+			expect(response.status).toBe(200);
+			expect(response.body.user.email).toBe("test.user@example.com");
+			expect(response.body.user.name).toBe("Test User");
+			expect(verifyIdTokenMock).not.toHaveBeenCalled();
+		} finally {
+			process.env.GOOGLE_TEST_TOKEN = originalEnv.token;
+			process.env.GOOGLE_TEST_USER_EMAIL = originalEnv.email;
+			process.env.GOOGLE_TEST_USER_ID = originalEnv.userId;
+			process.env.GOOGLE_TEST_USER_NAME = originalEnv.name;
+			process.env.GOOGLE_TEST_USER_AVATAR = originalEnv.avatar;
+		}
 	});
 });
