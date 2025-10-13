@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { z } from "zod";
-import { updateMessageHandler } from "@/controllers/message.controller";
+import {
+	updateMessageHandler,
+	deleteMessageHandler,
+} from "@/controllers/message.controller";
 import { validateBody } from "@/middlewares/validation.middleware";
 import { verifyJwt } from "@/middlewares/auth.middleware";
 
@@ -16,5 +19,7 @@ router.put(
 	validateBody(updateMessageSchema),
 	updateMessageHandler
 );
+
+router.delete("/:messageId", verifyJwt, deleteMessageHandler);
 
 export const messageRoutes = router;

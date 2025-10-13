@@ -88,3 +88,48 @@ export async function updateMessageHandler(
 	await sendChatPatch(req.user.id, messageDoc.chatId.toString());
 	res.json(message);
 }
+
+export async function deleteMessageHandler(
+	req: Request,
+	res: Response
+): Promise<void> {
+	if (!req.user) {
+		res.status(401).json({ message: "Unauthorized" });
+		return;
+	}
+
+	const { messageId } = req.params;
+
+	if (!Types.ObjectId.isValid(messageId)) {
+		res.status(400).json({ message: "Invalid message id" });
+		return;
+	}
+
+	const messageDoc = await MessageModel.findById(messageId).lean();
+
+	if (!messageDoc) {
+		res.status(404).json({ message: "Message not found" });
+		return;
+	}
+
+	const ownerId = new Types.ObjectId(req.user.id);
+	const chat = await chatService.getChatOwnedBy(
+		messageDoc.chatId.toString(),
+		ownerId
+	);
+
+	if (!chat) {
+		res.status(404).json({ message: "Chat not found" });
+		return;
+	}
+
+	const removed = await messageService.deleteMessage(messageId);
+
+	if (!removed) {
+		res.status(404).json({ message: "Message not found" });
+		return;
+	}
+
+	await sendChatPatch(req.user.id, messageDoc.chatId.toString());
+	res.status(204).end();
+}

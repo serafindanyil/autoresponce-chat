@@ -109,11 +109,11 @@ Deletes a chat by identifier.
 Creates a message in the chat owned by the authenticated user. When `isBot` is `false`, the auto-reply service schedules an automated response.
 
 - **Request Body**
-	```json
-	{
-		"text": "Hello"
-	}
-	```
+  ```json
+  {
+  	"text": "Hello"
+  }
+  ```
 - **Notes**: The backend automatically uses the authenticated user's profile for `authorName` and `authorUserId`.
 
 ### `PUT /api/messages/:messageId`
@@ -128,6 +128,15 @@ Updates message text.
 - **Failure Codes**
   - `400`: Invalid `messageId` format or payload validation errors.
   - `404`: Message not found.
+
+### `DELETE /api/messages/:messageId`
+
+Removes a message owned by the authenticated user.
+
+- **Response 204**: No body.
+- **Failure Codes**
+  - `400`: Invalid `messageId` format.
+  - `404`: Message not found or chat not owned by the user.
 
 ## Real-Time Events
 

@@ -65,3 +65,8 @@ export async function updateMessage(
 		{ new: true, runValidators: true }
 	).lean();
 }
+
+export async function deleteMessage(messageId: string): Promise<boolean> {
+	const result = await MessageModel.findByIdAndDelete(messageId).lean();
+	return Boolean(result);
+}
