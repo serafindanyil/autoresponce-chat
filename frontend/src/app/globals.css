@@ -1,26 +1,28 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+	--color-background: 220 15% 10%;
+	--color-surface: 220 15% 15%;
+	--color-primary: 260 60% 60%;
+	--color-primary-foreground: 210 20% 95%;
+	--color-secondary: 220 15% 15%;
+	--color-secondary-foreground: 210 20% 95%;
+	--color-muted: 220 15% 20%;
+	--color-muted-foreground: 210 12% 85%;
+	--color-accent: 260 55% 55%;
+	--color-accent-foreground: 210 20% 95%;
+	--color-user-message: 260 50% 25%;
+	--color-user-message-foreground: 210 20% 95%;
+	--color-bot-message: 220 50% 25%;
+	--color-bot-message-foreground: 210 20% 95%;
+	--color-foreground: 210 20% 95%;
 }
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+	background-color: hsl(var(--color-background));
+	color: hsl(var(--color-foreground));
+	font-family: var(--font-sans), "Inter", "-apple-system", "BlinkMacSystemFont",
+		"Segoe UI", "Roboto", "sans-serif";
+	font-variation-settings: "opsz" 110, "GRAD" 0;
 }
