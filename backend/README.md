@@ -1,6 +1,6 @@
 # Backend API
 
-This backend exposes REST endpoints under the `/api` namespace alongside a `/health` probe. All responses are JSON. Unless noted otherwise, requests and responses use UTF-8 encoded JSON bodies.
+This backend exposes a small REST surface under the `/api` namespace alongside a `/health` probe. Real-time chat data is delivered over Socket.IO after authentication. All REST responses are JSON using UTF-8 encoding.
 
 ## Base URLs
 
@@ -77,43 +77,13 @@ Exchanges a Google ID token for a signed JWT and user payload. Requires Google O
   - `500`: Google OAuth not configured via env vars.
 - **Local Testing**
   - Provide `GOOGLE_TEST_TOKEN` (and optional `GOOGLE_TEST_USER_*` overrides) in `.env` to bypass Google verification and receive a signed JWT for that synthetic user.
+  - On successful authentication the backend provisions a default chat roster (Ada Lovelace, Alan Turing, Grace Hopper) scoped to that user if none exists.
+
+> All subsequent REST and socket requests must include the JWT using `Authorization: Bearer <token>` or the Socket.IO auth handshake described below.
 
 ## Chats
 
-### `GET /api/chats`
-
-Lists chats ordered by last update descending.
-
-- **Response 200**
-  ```json
-  [
-  	{
-  		"_id": "<chatId>",
-  		"firstName": "Ada",
-  		"lastName": "Lovelace",
-  		"metadata": { "avatarUrl": "https://..." },
-  		"createdAt": "2025-01-01T00:00:00.000Z",
-  		"updatedAt": "2025-01-01T00:00:00.000Z"
-  	}
-  ]
-  ```
-
-### `POST /api/chats`
-
-Creates a chat participant profile.
-
-- **Request Body**
-  ```json
-  {
-  	"firstName": "Ada",
-  	"lastName": "Lovelace",
-  	"metadata": {
-  		"avatarUrl": "https://..."
-  	}
-  }
-  ```
-- **Response 201**: Returns newly created chat document.
-- **Failure Codes**: `400` validation errors.
+Chats are provisioned automatically for each authenticated user during login. There is currently no REST endpoint to create additional chats; use the update and delete operations to manage metadata.
 
 ### `PUT /api/chats/:chatId`
 
@@ -134,32 +104,9 @@ Deletes a chat by identifier.
   - `400`: Invalid `chatId` format.
   - `404`: Chat not found.
 
-### `GET /api/chats/:chatId/messages`
-
-Retrieves all messages for a chat sorted by creation timestamp ascending.
-
-- **Response 200**
-  ```json
-  [
-  	{
-  		"_id": "<messageId>",
-  		"chatId": "<chatId>",
-  		"text": "Hello",
-  		"author": {
-  			"name": "Ada",
-  			"userId": "<userId>",
-  			"isBot": false
-  		},
-  		"createdAt": "2025-01-01T00:00:00.000Z",
-  		"updatedAt": "2025-01-01T00:00:00.000Z"
-  	}
-  ]
-  ```
-- **Failure Codes**: `400` when `chatId` is not a valid ObjectId.
-
 ### `POST /api/chats/:chatId/messages`
 
-Creates a message for the chat. When `isBot` is `false`, the auto-reply service schedules a bot response.
+Creates a message in the chat owned by the authenticated user. When `isBot` is `false`, the auto-reply service schedules an automated response.
 
 - **Request Body**
   ```json
@@ -173,7 +120,9 @@ Creates a message for the chat. When `isBot` is `false`, the auto-reply service 
 - **Response 201**: Created message document.
 - **Failure Codes**
   - `400`: Invalid `chatId`, `authorUserId`, or payload.
-  - `404`: Chat not found (if future validation added).
+  - `404`: Chat not found or not owned by the caller.
+
+> Reading chats and messages is socket-driven. Clients should subscribe to snapshots as described in the Socket.IO section instead of polling REST endpoints.
 
 ## Messages
 
@@ -192,10 +141,92 @@ Updates message text.
 
 ## Real-Time Events
 
-Although not required to consume REST endpoints, the Socket.IO server emits real-time updates using these channels when active:
+Chat state is synchronized over Socket.IO authenticated with the same JWT you receive from the auth endpoint.
 
-- `chat:created`, `chat:updated`, `chat:deleted`
-- `message:new`, `message:edited`
-- `notification`
+- **Handshake**
 
-Clients should connect to the same origin (`ws://localhost:4000`) and join the relevant `chatId` room to receive message events.
+  ```ts
+  import { io } from "socket.io-client";
+
+  const socket = io("http://localhost:4000", {
+  	auth: { token: "<jwt>" },
+  });
+  ```
+
+- **Rooms**: The server automatically joins the socket to a user-scoped room (`user:<userId>`).
+
+### `chats:bootstrap`
+
+Fired once immediately after a socket connects successfully. The payload is a list of all chats (including the three defaults created on first login) with their current messages.
+
+```json
+[
+	{
+		"chat": {
+			"_id": "<chatId>",
+			"ownerId": "<userId>",
+			"firstName": "Ada",
+			"lastName": "Lovelace",
+			"metadata": { "avatarUrl": null },
+			"createdAt": "2025-01-01T00:00:00.000Z",
+			"updatedAt": "2025-01-01T00:00:00.000Z"
+		},
+		"messages": []
+	}
+]
+```
+
+### `chats:patch`
+
+Emitted every time a chat or message changes (manual, auto-reply, or broadcast). The payload contains only the affected chat so clients can apply targeted updates.
+
+```json
+{
+	"chatId": "<chatId>",
+	"chat": {
+		"_id": "<chatId>",
+		"ownerId": "<userId>",
+		"firstName": "Ada",
+		"lastName": "Lovelace",
+		"metadata": { "avatarUrl": null },
+		"createdAt": "2025-01-01T00:00:00.000Z",
+		"updatedAt": "2025-01-01T00:01:00.000Z"
+	},
+	"messages": [
+		{
+			"_id": "<messageId>",
+			"chatId": "<chatId>",
+			"text": "Hello",
+			"author": {
+				"name": "Ada",
+				"userId": "<userId>",
+				"isBot": false
+			},
+			"createdAt": "2025-01-01T00:00:00.000Z",
+			"updatedAt": "2025-01-01T00:00:00.000Z"
+		},
+		{
+			"_id": "<messageId2>",
+			"chatId": "<chatId>",
+			"text": "Keep learning — Test Bot",
+			"author": {
+				"name": "Quote Bot",
+				"userId": null,
+				"isBot": true
+			},
+			"createdAt": "2025-01-01T00:00:03.000Z",
+			"updatedAt": "2025-01-01T00:00:03.000Z"
+		}
+	]
+}
+```
+
+If a chat is deleted the server emits `{ "chatId": "<chatId>", "removed": true }` using the same event so clients can drop it locally.
+
+### `notification`
+
+Used for system-wide notices (e.g., broadcasting auto bot status toggles). Payload shape varies.
+
+### `toggle:autoBot`
+
+Client-emitted event to enable or disable scheduled broadcast messages. Send `true` or `false` as the payload; the server replies with a `notification` event indicating the current state.

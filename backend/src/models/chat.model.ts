@@ -5,6 +5,7 @@ export interface ChatMetadata {
 }
 
 export interface Chat {
+	readonly ownerId: Types.ObjectId;
 	readonly firstName: string;
 	readonly lastName: string;
 	readonly metadata?: ChatMetadata;
@@ -17,6 +18,12 @@ export type ChatLean = Chat & { readonly _id: Types.ObjectId };
 
 const chatSchema = new Schema<ChatDocument>(
 	{
+		ownerId: {
+			type: Schema.Types.ObjectId,
+			ref: "User",
+			required: true,
+			index: true,
+		},
 		firstName: {
 			type: String,
 			required: true,
@@ -42,8 +49,8 @@ const chatSchema = new Schema<ChatDocument>(
 	}
 );
 
-chatSchema.index({ updatedAt: -1 });
-chatSchema.index({ firstName: "text", lastName: "text" });
+chatSchema.index({ ownerId: 1, updatedAt: -1 });
+chatSchema.index({ ownerId: 1, firstName: "text", lastName: "text" });
 
 export const ChatModel: Model<ChatDocument> = model<ChatDocument>(
 	"Chat",

@@ -19,6 +19,23 @@ export async function listMessages(chatId: string): Promise<MessageLean[]> {
 		.lean();
 }
 
+export async function listMessagesForChats(
+	chatIds: Types.ObjectId[]
+): Promise<Record<string, MessageLean[]>> {
+	const messages = await MessageModel.find({ chatId: { $in: chatIds } })
+		.sort({ createdAt: 1 })
+		.lean();
+
+	return messages.reduce<Record<string, MessageLean[]>>((acc, message) => {
+		const key = message.chatId.toString();
+		if (!acc[key]) {
+			acc[key] = [];
+		}
+		acc[key].push(message);
+		return acc;
+	}, {});
+}
+
 export async function createMessage(
 	input: CreateMessageInput
 ): Promise<MessageDocument> {
@@ -30,7 +47,10 @@ export async function createMessage(
 		author: {
 			name: authorName,
 			isBot: Boolean(isBot),
-			userId: authorUserId ? new Types.ObjectId(authorUserId) : undefined,
+			userId:
+				authorUserId && Types.ObjectId.isValid(authorUserId)
+					? new Types.ObjectId(authorUserId)
+					: undefined,
 		},
 	});
 }

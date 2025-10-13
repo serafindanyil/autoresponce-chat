@@ -2,72 +2,75 @@ import { env } from "@/config/env";
 import { fetchQuote } from "@/services/quote.service";
 import { ChatModel } from "@/models";
 import { createMessage } from "@/services/message.service";
-import { emitMessageCreated } from "@/sockets/events";
+import { sendChatPatch } from "@/services/chat-sync.service";
 import { logInfo, logError } from "@/utils/logger";
 
 let timer: NodeJS.Timeout | null = null;
 let enabled = false;
 
 export function enableAutoBroadcast(): void {
-  if (enabled) {
-    return;
-  }
+	if (enabled) {
+		return;
+	}
 
-  enabled = true;
-  scheduleNext();
+	enabled = true;
+	scheduleNext();
 }
 
 export function disableAutoBroadcast(): void {
-  enabled = false;
+	enabled = false;
 
-  if (timer) {
-    clearTimeout(timer);
-    timer = null;
-  }
+	if (timer) {
+		clearTimeout(timer);
+		timer = null;
+	}
 }
 
 export function isAutoBroadcastEnabled(): boolean {
-  return enabled;
+	return enabled;
 }
 
 async function performBroadcast() {
-  try {
-    const count = await ChatModel.countDocuments();
+	try {
+		const count = await ChatModel.countDocuments();
 
-    if (count === 0) {
-      return;
-    }
+		if (count === 0) {
+			return;
+		}
 
-    const randomOffset = Math.floor(Math.random() * count);
-    const randomChat = await ChatModel.findOne().skip(randomOffset).lean();
+		const randomOffset = Math.floor(Math.random() * count);
+		const randomChat = await ChatModel.findOne().skip(randomOffset).lean();
 
-    if (!randomChat) {
-      return;
-    }
+		if (!randomChat) {
+			return;
+		}
 
-    const quote = await fetchQuote();
+		const quote = await fetchQuote();
 
-    const message = await createMessage({
-      chatId: randomChat._id.toString(),
-      text: `${quote.content} — ${quote.author}`,
-      authorName: "Auto Bot",
-      isBot: true,
-    });
+		await createMessage({
+			chatId: randomChat._id.toString(),
+			text: `${quote.content} — ${quote.author}`,
+			authorName: "Auto Bot",
+			isBot: true,
+		});
 
-    emitMessageCreated(message.toObject());
-    logInfo("Broadcast message sent", { chatId: randomChat._id });
-  } catch (error) {
-    logError("Failed to broadcast message", { error });
-  }
+		await sendChatPatch(
+			randomChat.ownerId.toString(),
+			randomChat._id.toString()
+		);
+		logInfo("Broadcast message sent", { chatId: randomChat._id });
+	} catch (error) {
+		logError("Failed to broadcast message", { error });
+	}
 }
 
 function scheduleNext() {
-  if (!enabled) {
-    return;
-  }
+	if (!enabled) {
+		return;
+	}
 
-  timer = setTimeout(async () => {
-    await performBroadcast();
-    scheduleNext();
-  }, env.broadcastIntervalMs);
+	timer = setTimeout(async () => {
+		await performBroadcast();
+		scheduleNext();
+	}, env.broadcastIntervalMs);
 }

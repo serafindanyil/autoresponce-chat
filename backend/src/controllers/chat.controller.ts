@@ -1,64 +1,68 @@
 import { Types } from "mongoose";
 import type { Request, Response } from "express";
 import * as chatService from "@/services/chat.service";
-import * as messageService from "@/services/message.service";
-import {
-	emitChatCreated,
-	emitChatDeleted,
-	emitChatUpdated,
-} from "@/sockets/events";
-
-export async function getChats(_: Request, res: Response): Promise<void> {
-	const chats = await chatService.listChats();
-	res.json(chats);
-}
-
-export async function createChat(req: Request, res: Response): Promise<void> {
-	const chatDoc = await chatService.createChat(req.body);
-	const chat = chatDoc.toObject();
-	emitChatCreated(chat);
-	res.status(201).json(chat);
-}
+import { sendChatPatch } from "@/services/chat-sync.service";
 
 export async function updateChatHandler(
 	req: Request,
 	res: Response
 ): Promise<void> {
-	const chat = await chatService.updateChat(req.params.chatId, req.body);
+	if (!req.user) {
+		res.status(401).json({ message: "Unauthorized" });
+		return;
+	}
+
+	const { chatId } = req.params;
+
+	if (!Types.ObjectId.isValid(chatId)) {
+		res.status(400).json({ message: "Invalid chat id" });
+		return;
+	}
+
+	const ownerId = new Types.ObjectId(req.user.id);
+	const chat = await chatService.getChatOwnedBy(chatId, ownerId);
 
 	if (!chat) {
 		res.status(404).json({ message: "Chat not found" });
 		return;
 	}
 
-	emitChatUpdated(chat);
-	res.json(chat);
+	const updated = await chatService.updateChat(chatId, req.body);
+
+	if (!updated) {
+		res.status(404).json({ message: "Chat not found" });
+		return;
+	}
+
+	await sendChatPatch(req.user.id, chatId);
+	res.json(updated);
 }
 
 export async function deleteChatHandler(
 	req: Request,
 	res: Response
 ): Promise<void> {
-	const chat = await chatService.deleteChat(req.params.chatId);
+	if (!req.user) {
+		res.status(401).json({ message: "Unauthorized" });
+		return;
+	}
+
+	const { chatId } = req.params;
+
+	if (!Types.ObjectId.isValid(chatId)) {
+		res.status(400).json({ message: "Invalid chat id" });
+		return;
+	}
+
+	const ownerId = new Types.ObjectId(req.user.id);
+	const chat = await chatService.getChatOwnedBy(chatId, ownerId);
 
 	if (!chat) {
 		res.status(404).json({ message: "Chat not found" });
 		return;
 	}
 
-	emitChatDeleted(chat._id.toString());
+	await chatService.deleteChat(chatId);
+	await sendChatPatch(req.user.id, chatId, { removed: true });
 	res.status(204).send();
-}
-
-export async function getChatMessages(
-	req: Request,
-	res: Response
-): Promise<void> {
-	if (!Types.ObjectId.isValid(req.params.chatId)) {
-		res.status(400).json({ message: "Invalid chat id" });
-		return;
-	}
-
-	const messages = await messageService.listMessages(req.params.chatId);
-	res.json(messages);
 }

@@ -1,26 +1,18 @@
-import { Types } from "mongoose";
 import type { Server } from "socket.io";
 import type {
-	ChatDocument,
-	ChatLean,
-	MessageDocument,
-	MessageLean,
-} from "@/models";
+	ChatBootstrapItem,
+	ChatPatchPayload,
+} from "@/services/chat-sync.service";
 
 let ioInstance: Server | undefined;
 
 export enum ServerEvents {
-	MessageNew = "message:new",
-	MessageEdited = "message:edited",
-	ChatCreated = "chat:created",
-	ChatUpdated = "chat:updated",
-	ChatDeleted = "chat:deleted",
+	ChatsBootstrap = "chats:bootstrap",
+	ChatPatch = "chats:patch",
 	Notification = "notification",
 }
 
 export enum ClientEvents {
-	JoinChat = "join:chat",
-	LeaveChat = "leave:chat",
 	ToggleAutoBot = "toggle:autoBot",
 }
 
@@ -36,38 +28,23 @@ function withIo(handler: (io: Server) => void): void {
 	handler(ioInstance);
 }
 
-export function emitChatCreated(chat: ChatLean | ChatDocument): void {
-	withIo((io) => io.emit(ServerEvents.ChatCreated, chat));
-}
-
-export function emitChatUpdated(chat: ChatLean | ChatDocument): void {
-	withIo((io) => io.emit(ServerEvents.ChatUpdated, chat));
-}
-
-export function emitChatDeleted(chatId: string): void {
-	withIo((io) => io.emit(ServerEvents.ChatDeleted, { chatId }));
-}
-
-export function emitMessageCreated(
-	message: MessageLean | MessageDocument
+export function emitChatsBootstrap(
+	userId: string,
+	data: ChatBootstrapItem[]
 ): void {
 	withIo((io) =>
-		io.to(stringifyId(message.chatId)).emit(ServerEvents.MessageNew, message)
+		io.to(userRoom(userId)).emit(ServerEvents.ChatsBootstrap, data)
 	);
 }
 
-export function emitMessageEdited(
-	message: MessageLean | MessageDocument
-): void {
-	withIo((io) =>
-		io.to(stringifyId(message.chatId)).emit(ServerEvents.MessageEdited, message)
-	);
+export function emitChatPatch(userId: string, payload: ChatPatchPayload): void {
+	withIo((io) => io.to(userRoom(userId)).emit(ServerEvents.ChatPatch, payload));
 }
 
 export function emitNotification(payload: Record<string, unknown>): void {
 	withIo((io) => io.emit(ServerEvents.Notification, payload));
 }
 
-function stringifyId(id: Types.ObjectId | string): string {
-	return typeof id === "string" ? id : id.toString();
+export function userRoom(userId: string): string {
+	return `user:${userId}`;
 }

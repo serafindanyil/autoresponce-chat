@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { updateMessageHandler } from "@/controllers/message.controller";
 import { validateBody } from "@/middlewares/validation.middleware";
+import { verifyJwt } from "@/middlewares/auth.middleware";
 
 const router = Router();
 
@@ -11,6 +12,7 @@ const updateMessageSchema = z.object({
 
 router.put(
 	"/:messageId",
+	verifyJwt,
 	validateBody(updateMessageSchema),
 	updateMessageHandler
 );

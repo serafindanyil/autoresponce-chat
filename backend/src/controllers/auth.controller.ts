@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
 import { env } from "@/config/env";
 import { UserModel } from "@/models";
+import { ensureDefaultChats } from "@/services/chat.service";
 
 export async function googleAuthCallback(
 	req: Request,
@@ -27,7 +28,7 @@ export async function googleAuthCallback(
 		return;
 	}
 
-	const user = await UserModel.findOneAndUpdate(
+	const userDoc = await UserModel.findOneAndUpdate(
 		{ email: payload.email, provider: "google" },
 		{
 			email: payload.email,
@@ -37,12 +38,16 @@ export async function googleAuthCallback(
 			avatarUrl: payload.picture,
 		},
 		{ upsert: true, new: true, setDefaultsOnInsert: true }
-	).lean();
+	);
+
+	if (userDoc?._id) {
+		await ensureDefaultChats(userDoc._id);
+	}
 
 	const jwtPayload = {
-		id: user?._id,
-		email: user?.email,
-		name: user?.name,
+		id: userDoc?._id.toString(),
+		email: userDoc?.email,
+		name: userDoc?.name,
 	};
 
 	const authToken = jwt.sign(jwtPayload, env.jwtSecret, { expiresIn: "7d" });

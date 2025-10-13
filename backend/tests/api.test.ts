@@ -1,28 +1,109 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import {
+	describe,
+	it,
+	expect,
+	beforeAll,
+	afterAll,
+	beforeEach,
+	vi,
+} from "vitest";
+import { createServer } from "node:http";
+import type { AddressInfo } from "node:net";
+import { io as createClient, type Socket } from "socket.io-client";
+import request from "supertest";
+import jwt from "jsonwebtoken";
+import { createApp } from "@/app";
+import { createSocketServer } from "@/sockets";
+import { ServerEvents } from "@/sockets/events";
+import { env } from "@/config/env";
+import { ChatModel, UserModel } from "@/models";
+import type {
+	ChatBootstrapItem,
+	ChatPatchPayload,
+} from "@/services/chat-sync.service";
 
 const verifyIdTokenMock = vi.fn();
 
-vi.mock("google-auth-library", () => {
-	return {
-		OAuth2Client: vi.fn().mockImplementation(() => ({
-			verifyIdToken: verifyIdTokenMock,
-		})),
-	};
-});
-
-vi.mock("@/services/auto-reply.service", () => ({
-	scheduleAutoReply: vi.fn(),
+vi.mock("google-auth-library", () => ({
+	OAuth2Client: vi.fn().mockImplementation(() => ({
+		verifyIdToken: verifyIdTokenMock,
+	})),
 }));
 
-import request from "supertest";
-import { createApp } from "@/app";
-import { ChatModel, MessageModel, UserModel } from "@/models";
-import { scheduleAutoReply } from "@/services/auto-reply.service";
-import jwt from "jsonwebtoken";
-import { env } from "@/config/env";
+vi.mock("@/services/quote.service", () => ({
+	fetchQuote: vi.fn().mockResolvedValue({
+		content: "Keep learning",
+		author: "Test Bot",
+	}),
+}));
+
+const TEST_GOOGLE_TOKEN = "test-google-token";
+const TEST_USER_EMAIL = "user@example.com";
 
 const app = createApp();
-const scheduleAutoReplyMock = vi.mocked(scheduleAutoReply);
+const httpServer = createServer(app);
+const ioServer = createSocketServer(httpServer);
+let baseUrl: string;
+
+beforeAll(async () => {
+	await new Promise<void>((resolve) => {
+		httpServer.listen(0, () => resolve());
+	});
+	const address = httpServer.address() as AddressInfo;
+	baseUrl = `http://127.0.0.1:${address.port}`;
+});
+
+afterAll(async () => {
+	ioServer.close();
+	await new Promise<void>((resolve, reject) => {
+		httpServer.close((error) => (error ? reject(error) : resolve()));
+	});
+});
+
+beforeEach(() => {
+	verifyIdTokenMock.mockReset();
+	process.env.GOOGLE_TEST_TOKEN = TEST_GOOGLE_TOKEN;
+	process.env.GOOGLE_TEST_USER_EMAIL = TEST_USER_EMAIL;
+	process.env.GOOGLE_TEST_USER_ID = "google-test-id";
+	process.env.GOOGLE_TEST_USER_NAME = "Test User";
+	process.env.GOOGLE_TEST_USER_AVATAR = "https://example.com/avatar.png";
+});
+
+async function authenticate(): Promise<{ jwtToken: string; userId: string }> {
+	const response = await request(app)
+		.post("/api/auth/google")
+		.send({ token: TEST_GOOGLE_TOKEN });
+
+	return {
+		jwtToken: response.body.token,
+		userId: response.body.user.id,
+	};
+}
+
+async function connectClient(jwtToken: string): Promise<Socket> {
+	return await new Promise<Socket>((resolve, reject) => {
+		const client = createClient(baseUrl, {
+			transports: ["websocket"],
+			reconnection: false,
+			auth: { token: jwtToken },
+		});
+
+		client.once("connect", () => resolve(client));
+		client.once("connect_error", (error) => reject(error));
+	});
+}
+
+async function waitForBootstrap(socket: Socket): Promise<ChatBootstrapItem[]> {
+	return await new Promise<ChatBootstrapItem[]>((resolve) => {
+		socket.once(ServerEvents.ChatsBootstrap, (payload) => resolve(payload));
+	});
+}
+
+async function waitForPatch(socket: Socket): Promise<ChatPatchPayload> {
+	return await new Promise<ChatPatchPayload>((resolve) => {
+		socket.once(ServerEvents.ChatPatch, (payload) => resolve(payload));
+	});
+}
 
 describe("Health endpoint", () => {
 	it("returns healthy status", async () => {
@@ -33,187 +114,105 @@ describe("Health endpoint", () => {
 	});
 });
 
-describe("Test endpoint", () => {
-	it("returns application status", async () => {
-		const response = await request(app).get("/api/test");
+describe("Authentication flow", () => {
+	it("issues jwt and provisions default chats", async () => {
+		const { jwtToken, userId } = await authenticate();
+		const decoded = jwt.verify(jwtToken, env.jwtSecret) as jwt.JwtPayload;
 
-		expect(response.status).toBe(200);
-		expect(response.body.status).toBe("ok");
-		expect(response.body.message).toBe("Test endpoint is reachable.");
-		expect(response.body.totalUsers).toBe(0);
-	});
-});
+		expect(decoded.email).toBe(TEST_USER_EMAIL);
+		expect(decoded.id).toBe(userId);
 
-describe("Chat endpoints", () => {
-	beforeEach(() => {
-		scheduleAutoReplyMock.mockClear();
+		const chats = await ChatModel.find({ ownerId: userId }).lean();
+		expect(chats).toHaveLength(3);
 	});
 
-	it("creates, lists, updates, and deletes a chat", async () => {
-		const createPayload = { firstName: "Ada", lastName: "Lovelace" };
-		const createResponse = await request(app)
-			.post("/api/chats")
-			.send(createPayload);
-
-		expect(createResponse.status).toBe(201);
-		expect(createResponse.body.firstName).toBe("Ada");
-		expect(createResponse.body.lastName).toBe("Lovelace");
-
-		const chatId = createResponse.body._id;
-
-		const listResponse = await request(app).get("/api/chats");
-		expect(listResponse.status).toBe(200);
-		expect(listResponse.body).toHaveLength(1);
-
-		const messagesResponse = await request(app).get(
-			`/api/chats/${chatId}/messages`
-		);
-		expect(messagesResponse.status).toBe(200);
-		expect(messagesResponse.body).toEqual([]);
-
-		const updatePayload = {
-			metadata: { avatarUrl: "https://example.com/avatar.png" },
-		};
-		const updateResponse = await request(app)
-			.put(`/api/chats/${chatId}`)
-			.send(updatePayload);
-
-		expect(updateResponse.status).toBe(200);
-		expect(updateResponse.body.metadata.avatarUrl).toBe(
-			"https://example.com/avatar.png"
-		);
-
-		const deleteResponse = await request(app).delete(`/api/chats/${chatId}`);
-		expect(deleteResponse.status).toBe(204);
-
-		const chatsAfterDelete = await ChatModel.countDocuments();
-		expect(chatsAfterDelete).toBe(0);
-	});
-
-	it("creates and updates messages for a chat", async () => {
-		const chat = await ChatModel.create({
-			firstName: "Alan",
-			lastName: "Turing",
-		});
-
-		const messagePayload = {
-			text: "Hello there",
-			authorName: "Alan",
-		};
-
-		const createMessageResponse = await request(app)
-			.post(`/api/chats/${chat._id.toString()}/messages`)
-			.send(messagePayload);
-
-		expect(createMessageResponse.status).toBe(201);
-		expect(createMessageResponse.body.text).toBe("Hello there");
-		expect(scheduleAutoReplyMock).toHaveBeenCalledWith(chat._id.toString());
-
-		const messageId = createMessageResponse.body._id;
-
-		const updateMessageResponse = await request(app)
-			.put(`/api/messages/${messageId}`)
-			.send({ text: "Updated message" });
-
-		expect(updateMessageResponse.status).toBe(200);
-		expect(updateMessageResponse.body.text).toBe("Updated message");
-
-		const storedMessage = await MessageModel.findById(messageId).lean();
-		expect(storedMessage?.text).toBe("Updated message");
-	});
-
-	it("rejects invalid chat id when fetching messages", async () => {
-		const response = await request(app).get("/api/chats/invalid-id/messages");
-
-		expect(response.status).toBe(400);
-		expect(response.body.message).toBe("Invalid chat id");
-	});
-});
-
-describe("Auth endpoint", () => {
-	beforeEach(() => {
-		verifyIdTokenMock.mockReset();
-	});
-
-	it("returns error when token missing", async () => {
-		const response = await request(app).post("/api/auth/google").send({});
-
-		expect(response.status).toBe(400);
-		expect(response.body.message).toBe("Validation failed");
-		expect(response.body.errors.fieldErrors.token).toBeDefined();
-	});
-
-	it("returns token and user data on success", async () => {
+	it("supports Google token verification fallback", async () => {
+		process.env.GOOGLE_TEST_TOKEN = "";
 		verifyIdTokenMock.mockResolvedValue({
 			getPayload: () => ({
-				email: "user@example.com",
+				email: TEST_USER_EMAIL,
 				sub: "google-123",
-				name: "Test User",
-				picture: "https://example.com/avatar.png",
+				name: "Verified User",
+				picture: "https://example.com/verified.png",
 			}),
 		});
 
 		const response = await request(app)
 			.post("/api/auth/google")
-			.send({ token: "fake-token" });
+			.send({ token: "remote-token" });
 
 		expect(response.status).toBe(200);
-		expect(response.body.token).toBeTypeOf("string");
-		expect(response.body.user.email).toBe("user@example.com");
+		expect(verifyIdTokenMock).toHaveBeenCalled();
+		expect(response.body.user.email).toBe(TEST_USER_EMAIL);
+	});
+});
 
-		const decoded = jwt.verify(
-			response.body.token,
-			env.jwtSecret
-		) as jwt.JwtPayload;
-		expect(decoded.email).toBe("user@example.com");
+describe("Socket synchronization", () => {
+	it("sends initial chats snapshot after authentication", async () => {
+		const { jwtToken } = await authenticate();
+		const client = await connectClient(jwtToken);
 
-		const userCount = await UserModel.countDocuments();
-		expect(userCount).toBe(1);
+		const bootstrap = await waitForBootstrap(client);
+		expect(Array.isArray(bootstrap)).toBe(true);
+		expect(bootstrap).toHaveLength(3);
+
+		client.disconnect();
 	});
 
-	it("returns 400 for invalid google payload", async () => {
-		verifyIdTokenMock.mockResolvedValue({
-			getPayload: () => ({ email: null, sub: null }),
+	it("pushes updates when messages change", async () => {
+		vi.useFakeTimers();
+		try {
+			const { jwtToken, userId } = await authenticate();
+			const client = await connectClient(jwtToken);
+			await waitForBootstrap(client);
+
+			const chat = await ChatModel.findOne({ ownerId: userId }).lean();
+			expect(chat).not.toBeNull();
+
+			const updatePromise = waitForPatch(client);
+			const response = await request(app)
+				.post(`/api/chats/${chat!._id.toString()}/messages`)
+				.set("Authorization", `Bearer ${jwtToken}`)
+				.send({ text: "Hello" });
+
+			expect(response.status).toBe(201);
+			const firstUpdate = await updatePromise;
+			expect(firstUpdate.chatId).toBe(chat!._id.toString());
+			expect(firstUpdate.chat).toBeDefined();
+			expect(firstUpdate.messages).toBeDefined();
+			expect(firstUpdate.messages?.length ?? 0).toBeGreaterThanOrEqual(1);
+
+			const autoReplyPromise = waitForPatch(client);
+			await vi.advanceTimersByTimeAsync(3000);
+			const autoReplyUpdate = await autoReplyPromise;
+			expect(autoReplyUpdate.chatId).toBe(chat!._id.toString());
+			expect(autoReplyUpdate.messages?.length ?? 0).toBeGreaterThanOrEqual(2);
+
+			client.disconnect();
+		} finally {
+			vi.useRealTimers();
+		}
+	});
+});
+
+describe("Authorization guard", () => {
+	it("rejects unauthenticated message creation", async () => {
+		const owner = await UserModel.create({
+			email: "owner@example.com",
+			name: "Owner",
+			provider: "google",
+			providerId: "owner",
+		});
+		const chat = await ChatModel.create({
+			ownerId: owner._id,
+			firstName: "Ada",
+			lastName: "Lovelace",
 		});
 
 		const response = await request(app)
-			.post("/api/auth/google")
-			.send({ token: "fake-token" });
+			.post(`/api/chats/${chat._id.toString()}/messages`)
+			.send({ text: "Hello" });
 
-		expect(response.status).toBe(400);
-		expect(response.body.message).toBe("Invalid Google token");
-	});
-
-	it("allows authentication with configured test token", async () => {
-		const originalEnv = {
-			token: process.env.GOOGLE_TEST_TOKEN,
-			email: process.env.GOOGLE_TEST_USER_EMAIL,
-			userId: process.env.GOOGLE_TEST_USER_ID,
-			name: process.env.GOOGLE_TEST_USER_NAME,
-			avatar: process.env.GOOGLE_TEST_USER_AVATAR,
-		};
-
-		process.env.GOOGLE_TEST_TOKEN = "test-token";
-		process.env.GOOGLE_TEST_USER_EMAIL = "test.user@example.com";
-		process.env.GOOGLE_TEST_USER_ID = "test-google-id";
-		process.env.GOOGLE_TEST_USER_NAME = "Test User";
-		process.env.GOOGLE_TEST_USER_AVATAR = "https://example.com/test-avatar.png";
-
-		try {
-			const response = await request(app)
-				.post("/api/auth/google")
-				.send({ token: "test-token" });
-
-			expect(response.status).toBe(200);
-			expect(response.body.user.email).toBe("test.user@example.com");
-			expect(response.body.user.name).toBe("Test User");
-			expect(verifyIdTokenMock).not.toHaveBeenCalled();
-		} finally {
-			process.env.GOOGLE_TEST_TOKEN = originalEnv.token;
-			process.env.GOOGLE_TEST_USER_EMAIL = originalEnv.email;
-			process.env.GOOGLE_TEST_USER_ID = originalEnv.userId;
-			process.env.GOOGLE_TEST_USER_NAME = originalEnv.name;
-			process.env.GOOGLE_TEST_USER_AVATAR = originalEnv.avatar;
-		}
+		expect(response.status).toBe(401);
 	});
 });

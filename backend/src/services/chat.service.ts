@@ -1,7 +1,8 @@
-import type { FilterQuery } from "mongoose";
+import { Types, type FilterQuery } from "mongoose";
 import { ChatModel, type ChatDocument, type ChatLean } from "@/models";
 
 export interface CreateChatInput {
+	readonly ownerId: Types.ObjectId;
 	readonly firstName: string;
 	readonly lastName: string;
 	readonly metadata?: { readonly avatarUrl?: string };
@@ -21,6 +22,13 @@ export async function listChats(
 
 export async function getChatById(chatId: string): Promise<ChatLean | null> {
 	return ChatModel.findById(chatId).lean();
+}
+
+export async function getChatOwnedBy(
+	chatId: string,
+	ownerId: Types.ObjectId
+): Promise<ChatLean | null> {
+	return ChatModel.findOne({ _id: chatId, ownerId }).lean();
 }
 
 export async function createChat(
@@ -43,14 +51,25 @@ export async function deleteChat(chatId: string): Promise<ChatLean | null> {
 	return ChatModel.findByIdAndDelete(chatId).lean();
 }
 
-export async function seedChats(samples: CreateChatInput[]): Promise<number> {
-	const existing = await ChatModel.countDocuments();
+export async function listChatsByOwner(
+	ownerId: Types.ObjectId
+): Promise<ChatLean[]> {
+	return ChatModel.find({ ownerId }).sort({ updatedAt: -1 }).lean();
+}
 
-	if (existing > 0) {
-		return existing;
+export async function ensureDefaultChats(
+	ownerId: Types.ObjectId
+): Promise<void> {
+	const existingCount = await ChatModel.countDocuments({ ownerId });
+	if (existingCount > 0) {
+		return;
 	}
 
-	await ChatModel.insertMany(samples);
+	const defaults: Array<Omit<CreateChatInput, "ownerId">> = [
+		{ firstName: "Ada", lastName: "Lovelace" },
+		{ firstName: "Alan", lastName: "Turing" },
+		{ firstName: "Grace", lastName: "Hopper" },
+	];
 
-	return ChatModel.countDocuments();
+	await ChatModel.insertMany(defaults.map((chat) => ({ ...chat, ownerId })));
 }
