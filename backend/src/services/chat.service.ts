@@ -1,5 +1,6 @@
 import { Types, type FilterQuery } from "mongoose";
 import { ChatModel, type ChatDocument, type ChatLean } from "@/models";
+import { createMessage } from "@/services/message.service";
 
 export interface CreateChatInput {
 	readonly ownerId: Types.ObjectId;
@@ -65,11 +66,38 @@ export async function ensureDefaultChats(
 		return;
 	}
 
-	const defaults: Array<Omit<CreateChatInput, "ownerId">> = [
-		{ firstName: "Ada", lastName: "Lovelace" },
-		{ firstName: "Alan", lastName: "Turing" },
-		{ firstName: "Grace", lastName: "Hopper" },
+	const defaults: Array<
+		Omit<CreateChatInput, "ownerId"> & { readonly welcome: string }
+	> = [
+		{
+			firstName: "Ada",
+			lastName: "Lovelace",
+			welcome: "Привіт! Я Ада. Розкажи, над чим працюєш?",
+		},
+		{
+			firstName: "Alan",
+			lastName: "Turing",
+			welcome: "Радий знайомству! Як просувається твій сьогоднішній спринт?",
+		},
+		{
+			firstName: "Grace",
+			lastName: "Hopper",
+			welcome: "Вітаю! Поділишся, яку багу щойно перемогла?",
+		},
 	];
 
-	await ChatModel.insertMany(defaults.map((chat) => ({ ...chat, ownerId })));
+	const createdChats = await ChatModel.insertMany(
+		defaults.map(({ welcome, ...chat }) => ({ ...chat, ownerId }))
+	);
+
+	await Promise.all(
+		createdChats.map((chatDoc, index) =>
+			createMessage({
+				chatId: chatDoc._id.toString(),
+				text: defaults[index].welcome,
+				authorName: `${defaults[index].firstName} ${defaults[index].lastName}`,
+				isBot: true,
+			})
+		)
+	);
 }

@@ -12,9 +12,6 @@ const router = Router();
 
 const messageBodySchema = z.object({
 	text: z.string().min(1).max(2000),
-	authorName: z.string().min(1).max(120).optional(),
-	authorUserId: z.string().optional(),
-	isBot: z.boolean().optional(),
 });
 
 const updateChatSchema = z

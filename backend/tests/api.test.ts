@@ -16,7 +16,7 @@ import { createApp } from "@/app";
 import { createSocketServer } from "@/sockets";
 import { ServerEvents } from "@/sockets/events";
 import { env } from "@/config/env";
-import { ChatModel, UserModel } from "@/models";
+import { ChatModel, MessageModel, UserModel } from "@/models";
 import type {
 	ChatBootstrapItem,
 	ChatPatchPayload,
@@ -124,6 +124,11 @@ describe("Authentication flow", () => {
 
 		const chats = await ChatModel.find({ ownerId: userId }).lean();
 		expect(chats).toHaveLength(3);
+		const chatIds = chats.map((chat) => chat._id);
+		const seededMessages = await MessageModel.find({
+			chatId: { $in: chatIds },
+		}).lean();
+		expect(seededMessages).toHaveLength(3);
 	});
 
 	it("supports Google token verification fallback", async () => {
@@ -155,6 +160,9 @@ describe("Socket synchronization", () => {
 		const bootstrap = await waitForBootstrap(client);
 		expect(Array.isArray(bootstrap)).toBe(true);
 		expect(bootstrap).toHaveLength(3);
+		bootstrap.forEach((item) => {
+			expect(item.messages).toHaveLength(1);
+		});
 
 		client.disconnect();
 	});
@@ -180,13 +188,13 @@ describe("Socket synchronization", () => {
 			expect(firstUpdate.chatId).toBe(chat!._id.toString());
 			expect(firstUpdate.chat).toBeDefined();
 			expect(firstUpdate.messages).toBeDefined();
-			expect(firstUpdate.messages?.length ?? 0).toBeGreaterThanOrEqual(1);
+			expect(firstUpdate.messages?.length ?? 0).toBeGreaterThanOrEqual(2);
 
 			const autoReplyPromise = waitForPatch(client);
 			await vi.advanceTimersByTimeAsync(3000);
 			const autoReplyUpdate = await autoReplyPromise;
 			expect(autoReplyUpdate.chatId).toBe(chat!._id.toString());
-			expect(autoReplyUpdate.messages?.length ?? 0).toBeGreaterThanOrEqual(2);
+			expect(autoReplyUpdate.messages?.length ?? 0).toBeGreaterThanOrEqual(3);
 
 			client.disconnect();
 		} finally {

@@ -33,9 +33,8 @@ export async function createMessageHandler(
 	const messageDoc = await messageService.createMessage({
 		chatId,
 		text: req.body.text,
-		authorName: req.body.authorName ?? req.user.name,
-		authorUserId: req.body.authorUserId ?? req.user.id,
-		isBot: req.body.isBot,
+		authorName: req.user.name,
+		authorUserId: req.user.id,
 	});
 
 	if (!req.body.isBot) {

@@ -83,7 +83,7 @@ Exchanges a Google ID token for a signed JWT and user payload. Requires Google O
 
 ## Chats
 
-Chats are provisioned automatically for each authenticated user during login. There is currently no REST endpoint to create additional chats; use the update and delete operations to manage metadata.
+Chats are provisioned automatically for each authenticated user during login. Each seeded chat містить перше привітальне повідомлення, яке надсилає співрозмовник-бот. There is currently no REST endpoint to create additional chats; use the update and delete operations to manage metadata.
 
 ### `PUT /api/chats/:chatId`
 
@@ -109,22 +109,12 @@ Deletes a chat by identifier.
 Creates a message in the chat owned by the authenticated user. When `isBot` is `false`, the auto-reply service schedules an automated response.
 
 - **Request Body**
-  ```json
-  {
-  	"text": "Hello",
-  	"authorName": "Ada",
-  	"authorUserId": "<userId>",
-  	"isBot": false
-  }
-  ```
-- **Response 201**: Created message document.
-- **Failure Codes**
-  - `400`: Invalid `chatId`, `authorUserId`, or payload.
-  - `404`: Chat not found or not owned by the caller.
-
-> Reading chats and messages is socket-driven. Clients should subscribe to snapshots as described in the Socket.IO section instead of polling REST endpoints.
-
-## Messages
+	```json
+	{
+		"text": "Hello"
+	}
+	```
+- **Notes**: The backend automatically uses the authenticated user's profile for `authorName` and `authorUserId`.
 
 ### `PUT /api/messages/:messageId`
 
