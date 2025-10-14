@@ -14,7 +14,7 @@ type ChatItemProps = {
 };
 
 const CHAT_ITEM_CLASS = cva(
-	"flex gap-4 items-center w-full px-3 py-2 transition-colors duration-200 xl:hover:bg-muted/50 cursor-pointer",
+	"flex gap-4 items-center w-full px-3 py-4 transition-colors duration-200 xl:hover:bg-muted/50 cursor-pointer",
 	{
 		variants: {
 			state: {
@@ -43,7 +43,7 @@ const ChatItem = ({
 			</div>
 			<div className="w-full space-y-1">
 				<div className="flex justify-between">
-					<h4 className="font-semibold text-xs">{`${firstName} ${lastName}`}</h4>
+					<h4 className="font-semibold text-sm">{`${firstName} ${lastName}`}</h4>
 					<span className="text-xs text-muted-foreground">{time}</span>
 				</div>
 				<div className="flex justify-between">

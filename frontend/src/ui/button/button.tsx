@@ -15,7 +15,7 @@ const BUTTON_CLASS = cva(
 			size: {
 				bg: "px-6 py-3 text-base gap-3",
 				md: "px-4 py-2 text-sm gap-2",
-				sm: "px-3 py-2 text-xs gap-1",
+				sm: "px-3 py-2 text-xs gap-2",
 			},
 			state: {
 				default: "bg-background xl:hover:bg-primary/90",

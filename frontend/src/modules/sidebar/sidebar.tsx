@@ -12,14 +12,14 @@ function Sidebar() {
 	const [isResizing, setIsResizing] = useState(false);
 
 	return (
-		<aside className="h-screen w-full">
+		<aside className="h-screen flex-shrink-0">
 			<Resizable
 				defaultSize={{
-					width: "30%",
+					width: "30vw",
 					height: "100%",
 				}}
-				minWidth="10%"
-				maxWidth="40%"
+				minWidth="30vw"
+				maxWidth="40vw"
 				enable={{
 					top: false,
 					right: true,

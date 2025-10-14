@@ -1,6 +1,10 @@
+import Chat from "@/modules/chat/chat";
+
 const HomePage = () => {
 	return (
-		<main className="flex min-h-screen items-center justify-center">123</main>
+		<div className="flex h-full min-h-full w-full min-w-0">
+			<Chat />
+		</div>
 	);
 };
 
