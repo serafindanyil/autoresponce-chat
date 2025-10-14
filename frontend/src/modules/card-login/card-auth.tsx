@@ -1,3 +1,5 @@
+"use client";
+
 import RobotLogo from "@/components/robot-logo/robot-logo";
 
 import Card from "@/ui/card/card";
