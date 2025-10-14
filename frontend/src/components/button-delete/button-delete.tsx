@@ -1,37 +1,54 @@
 "use client";
 
+import { useState } from "react";
 import Button from "@/ui/button/button";
+import ConfirmDialog from "@/ui/confirm-dialog/confirm-dialog";
 import { Trash } from "lucide-react";
 import { useDeleteChatMutation } from "@/shared/services/api.service";
 
 type ButtonDeleteProps = {
 	chatId: string;
+	chatName: string;
 	onSuccess?: () => void;
 };
 
-const ButtonDelete = ({ chatId, onSuccess }: ButtonDeleteProps) => {
+const ButtonDelete = ({ chatId, chatName, onSuccess }: ButtonDeleteProps) => {
+	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [deleteChat, { isLoading }] = useDeleteChatMutation();
 
-	const handleDelete = async () => {
-		if (confirm("Are you sure you want to delete this chat?")) {
-			try {
-				await deleteChat(chatId).unwrap();
-				onSuccess?.();
-			} catch (error) {
-				console.error("Failed to delete chat:", error);
-			}
+	const handleConfirm = async () => {
+		try {
+			await deleteChat(chatId).unwrap();
+			setIsConfirmOpen(false);
+			onSuccess?.();
+		} catch (error) {
+			console.error("Failed to delete chat:", error);
 		}
 	};
 
 	return (
-		<Button
-			onClick={handleDelete}
-			state="transparent"
-			size="sm"
-			disabled={isLoading}>
-			<Trash size={16} />
-			<p className="hidden xl:block">Delete</p>
-		</Button>
+		<>
+			<Button
+				onClick={() => setIsConfirmOpen(true)}
+				state="transparent"
+				size="sm"
+				disabled={isLoading}>
+				<Trash size={16} />
+				<p className="hidden xl:block">Delete</p>
+			</Button>
+
+			<ConfirmDialog
+				isOpen={isConfirmOpen}
+				onConfirm={handleConfirm}
+				onCancel={() => setIsConfirmOpen(false)}
+				title="Delete Chat"
+				message={`Are you sure you want to delete your conversation with ${chatName}? This action cannot be undone.`}
+				confirmText="Delete"
+				cancelText="Cancel"
+				isLoading={isLoading}
+				variant="danger"
+			/>
+		</>
 	);
 };
 

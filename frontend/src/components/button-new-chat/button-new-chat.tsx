@@ -1,43 +1,51 @@
 "use client";
 
+import { useState } from "react";
 import clsx from "clsx";
 import { Plus } from "lucide-react";
 import { useCreateChatMutation } from "@/shared/services/api.service";
-
 import Button from "@/ui/button/button";
+import Modal from "@/ui/modal/modal";
+import ChatForm, { type ChatFormData } from "@/components/chat-form/chat-form";
 
 const ButtonNewChat = () => {
+	const [isModalOpen, setIsModalOpen] = useState(false);
 	const [createChat, { isLoading }] = useCreateChatMutation();
 
-	const handleCreateChat = async () => {
-		// TODO: Add modal/form for entering first and last name
-		// For now, using prompt as a simple example
-		const first = prompt("Enter first name:");
-		const last = prompt("Enter last name:");
-
-		if (first && last) {
-			try {
-				await createChat({
-					firstName: first,
-					lastName: last,
-				}).unwrap();
-			} catch (error) {
-				console.error("Failed to create chat:", error);
-			}
+	const handleSubmit = async (data: ChatFormData) => {
+		try {
+			await createChat(data).unwrap();
+			setIsModalOpen(false);
+		} catch (error) {
+			console.error("Failed to create chat:", error);
 		}
 	};
 
 	return (
-		<Button
-			onClick={handleCreateChat}
-			state="transparent"
-			size={"sm"}
-			className={clsx("gap-2")}
-			aria-label={"Create new chat"}
-			disabled={isLoading}>
-			<Plus size={16} />
-			<p>New Chat</p>
-		</Button>
+		<>
+			<Button
+				onClick={() => setIsModalOpen(true)}
+				state="transparent"
+				size={"sm"}
+				className={clsx("gap-2")}
+				aria-label={"Create new chat"}>
+				<Plus size={16} />
+				<p>New Chat</p>
+			</Button>
+
+			<Modal
+				isOpen={isModalOpen}
+				onClose={() => setIsModalOpen(false)}
+				title="Create New Chat"
+				size="sm">
+				<ChatForm
+					onSubmit={handleSubmit}
+					onCancel={() => setIsModalOpen(false)}
+					isLoading={isLoading}
+					submitLabel="Create"
+				/>
+			</Modal>
+		</>
 	);
 };
 

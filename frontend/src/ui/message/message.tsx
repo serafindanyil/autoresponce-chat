@@ -62,12 +62,10 @@ const Message = ({
 	};
 
 	const handleDelete = async () => {
-		if (confirm("Are you sure you want to delete this message?")) {
-			try {
-				await deleteMessage(messageId).unwrap();
-			} catch (error) {
-				console.error("Failed to delete message:", error);
-			}
+		try {
+			await deleteMessage(messageId).unwrap();
+		} catch (error) {
+			console.error("Failed to delete message:", error);
 		}
 	};
 

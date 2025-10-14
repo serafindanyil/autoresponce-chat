@@ -39,7 +39,11 @@ const ChatHeader = ({ chatId }: ChatHeaderProps) => {
 						currentFirstName={firstName}
 						currentLastName={lastName}
 					/>
-					<ButtonDelete chatId={chatId} onSuccess={handleDeleteSuccess} />
+					<ButtonDelete 
+						chatId={chatId} 
+						chatName={`${firstName} ${lastName}`}
+						onSuccess={handleDeleteSuccess} 
+					/>
 				</div>
 			</Box>
 		</header>
