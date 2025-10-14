@@ -7,9 +7,7 @@ const Box = ({
 	children: React.ReactNode;
 	className?: string;
 }) => {
-	return (
-		<section className={clsx("p-3 border-b", className)}>{children}</section>
-	);
+	return <div className={clsx("p-3 border-b", className)}>{children}</div>;
 };
 
 export default Box;

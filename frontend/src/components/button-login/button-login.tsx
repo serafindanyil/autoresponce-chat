@@ -1,7 +1,7 @@
 import Button from "@/ui/button/button";
 
 const ButtonLogin = () => {
-	return <Button size="sm">Login</Button>;
+	return <Button size="md">Login</Button>;
 };
 
 export default ButtonLogin;

@@ -9,7 +9,7 @@ type InputProps = React.InputHTMLAttributes<HTMLInputElement> & {
 };
 
 const INPUT_CLASS = cva(
-	"flex items-center justify-center gap-3 px-10 py-2 bg-muted/50 text-sm placeholder:text-muted-foreground/80 rounded border duration-300 outline-none placeholder:text-muted-foreground focus:border-primary hover:border-primary/80 active:scale-95",
+	"flex items-center justify-center gap-3 pl-10 pr-4 py-2 bg-muted/50 text-sm placeholder:text-muted-foreground/80 rounded border duration-300 outline-none placeholder:text-muted-foreground focus:border-primary xl:hover:border-primary/80 truncate",
 	{
 		variants: {
 			size: {

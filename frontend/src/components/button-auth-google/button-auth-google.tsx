@@ -3,7 +3,7 @@ import Button from "@/ui/button/button";
 
 const ButtonAuthGoogle = () => {
 	return (
-		<Button className="w-full">
+		<Button size="bg" className="w-full">
 			<FaGoogle size={16} />
 			<p>Continue with Google</p>
 		</Button>
