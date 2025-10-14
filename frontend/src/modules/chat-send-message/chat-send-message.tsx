@@ -7,7 +7,7 @@ import { Search } from "lucide-react";
 const ChatSendMessage = () => {
 	return (
 		<header className="w-full">
-			<Box className="flex w-full items-stretch gap-2 bg-muted/30">
+			<Box className="flex w-full items-stretch gap-2 bg-muted/30 border-t border-b-0">
 				<Input placeholder="Type your message..." className="w-full" />
 				<Button size="md" state="active" className="">
 					<Search size={18} />
