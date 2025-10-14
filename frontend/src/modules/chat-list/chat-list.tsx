@@ -1,39 +1,40 @@
+"use client";
+
+import { useSelector } from "react-redux";
+import type { RootState } from "@/shared/store";
 import Message from "@/ui/message/message";
+import { useChats } from "@/shared/hooks/use-chats";
 
-const MESSAGES_ARRAY = [
-	{
-		id: "1",
-		isMine: false,
-		firstName: "Alice",
-		lastName: "Freeman",
-		message: "Hello! How can I assist you today?",
-		date: "08/07/2025 14:30PM",
-	},
-	{
-		id: "2",
-		isMine: true,
-		firstName: "Danyil",
-		lastName: "Serafin",
-		message: "Hello! How can I assist you today?",
-		date: "08/07/2025 14:30PM",
-	},
-];
+type ChatListProps = {
+	chatId: string;
+};
 
-const ChatHeader = () => {
+const ChatList = ({ chatId }: ChatListProps) => {
+	const { getChatMessages } = useChats();
+	const currentUserId = useSelector((state: RootState) => state.auth.user?.id);
+	const messages = getChatMessages(chatId);
+
 	return (
 		<section className="px-8 pt-8 pb-2 w-full h-full overflow-y-auto space-y-4">
-			{MESSAGES_ARRAY.map((message) => (
-				<Message
-					key={message.id}
-					firstName={message.firstName}
-					lastName={message.lastName}
-					message={message.message}
-					date={message.date}
-					isMine={message.isMine}
-				/>
-			))}
+			{messages.map((message) => {
+				const isMine = message.author.userId === currentUserId;
+				const [firstName = "", lastName = ""] = message.author.name.split(" ");
+
+				return (
+					<Message
+						key={message._id}
+						messageId={message._id}
+						firstName={firstName}
+						lastName={lastName}
+						message={message.text}
+						date={new Date(message.createdAt).toLocaleString()}
+						isMine={isMine}
+						isBot={message.author.isBot}
+					/>
+				);
+			})}
 		</section>
 	);
 };
 
-export default ChatHeader;
+export default ChatList;

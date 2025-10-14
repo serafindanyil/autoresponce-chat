@@ -7,6 +7,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 
 import { createPersistor, makeStore, type AppStore } from "@/shared/store";
 import { applyAuthToken } from "@/utils/auth-token";
+import { useSocket } from "@/shared/hooks/use-socket";
 
 type ProvidersProps = {
 	children: React.ReactNode;
@@ -33,11 +34,18 @@ const Providers = ({ children }: ProvidersProps) => {
 					loading={null}
 					persistor={persistor}
 					onBeforeLift={handleBeforeLift}>
+					<SocketInitializer />
 					{children}
 				</PersistGate>
 			</Provider>
 		</GoogleOAuthProvider>
 	);
+};
+
+// Separate component to use hooks after Provider is mounted
+const SocketInitializer = () => {
+	useSocket();
+	return null;
 };
 
 export default Providers;

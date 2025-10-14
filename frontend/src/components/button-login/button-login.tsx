@@ -1,15 +1,31 @@
+"use client";
+
 import clsx from "clsx";
-import Link from "next/link";
+import useAppSelector from "@/shared/hooks/use-app-selector";
+import { useLogout } from "@/shared/hooks/use-logout";
 
 import Button from "@/ui/button/button";
 
 const ButtonLogin = () => {
+	const token = useAppSelector((state) => state.auth.token);
+	const isLoggedIn = Boolean(token);
+	const { logout, isLoading } = useLogout();
+
+	const handleClick = () => {
+		if (isLoggedIn) {
+			logout();
+		}
+	};
+
 	return (
-		<Link href="/auth">
-			<Button size={"md"} className={clsx("gap-2")} aria-label={undefined}>
-				Login
-			</Button>
-		</Link>
+		<Button
+			onClick={handleClick}
+			size={"md"}
+			className={clsx("gap-2")}
+			aria-label={isLoggedIn ? "Logout" : "Login"}
+			disabled={isLoading}>
+			{isLoggedIn ? "Logout" : "Login"}
+		</Button>
 	);
 };
 
