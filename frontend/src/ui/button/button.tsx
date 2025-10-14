@@ -30,9 +30,11 @@ const BUTTON_CLASS = cva(
 	}
 );
 
-const Button = ({ children, className, size, state }: ButtonProps) => {
+const Button = ({ children, className, size, state, ...rest }: ButtonProps) => {
 	return (
-		<button className={clsx(BUTTON_CLASS({ size, state }), className)}>
+		<button
+			{...rest}
+			className={clsx(BUTTON_CLASS({ size, state }), className)}>
 			{children}
 		</button>
 	);
