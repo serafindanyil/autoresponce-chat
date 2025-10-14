@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import {
+	createChatHandler,
 	deleteChatHandler,
 	updateChatHandler,
 } from "@/controllers/chat.controller";
@@ -9,6 +10,16 @@ import { validateBody } from "@/middlewares/validation.middleware";
 import { verifyJwt } from "@/middlewares/auth.middleware";
 
 const router = Router();
+
+const createChatSchema = z.object({
+	firstName: z.string().min(1).max(100),
+	lastName: z.string().min(1).max(100),
+	metadata: z
+		.object({
+			avatarUrl: z.string().url().optional(),
+		})
+		.optional(),
+});
 
 const messageBodySchema = z.object({
 	text: z.string().min(1).max(2000),
@@ -29,8 +40,9 @@ const updateChatSchema = z
 	});
 
 router.use(verifyJwt);
-router.put(":chatId", validateBody(updateChatSchema), updateChatHandler);
-router.delete(":chatId", deleteChatHandler);
+router.post("/", validateBody(createChatSchema), createChatHandler);
+router.put("/:chatId", validateBody(updateChatSchema), updateChatHandler);
+router.delete("/:chatId", deleteChatHandler);
 router.post(
 	"/:chatId/messages",
 	validateBody(messageBodySchema),

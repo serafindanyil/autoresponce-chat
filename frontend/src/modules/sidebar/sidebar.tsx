@@ -8,6 +8,7 @@ import SidebarAuthPanel from "@/components/sidebar-auth-panel/sidebar-auth-panel
 import SidebarAddChatPanel from "@/components/sidebar-add-chat-panel/sidebar-add-chat-panel";
 import SidebarChatsPanel from "@/components/sidebar-chats-panel/sidebar-chats-panel";
 import SidebarSearchChat from "@/components/sidebar-search-chat/input-search-chat";
+import { ButtonToggleBroadcast } from "@/components/button-toggle-broadcast";
 import { SIDEBAR_DIMENSIONS, useSidebar } from "@/shared/hooks/use-sidebar";
 import { useSearchChats } from "@/shared/hooks/use-search-chats";
 
@@ -43,6 +44,7 @@ const Sidebar = () => {
 				<SidebarSearchChat value={searchQuery} onChange={setSearchQuery} />
 			)}
 			{!isCollapsed && <SidebarAddChatPanel />}
+			{!isCollapsed && <ButtonToggleBroadcast />}
 			<SidebarChatsPanel
 				collapsed={isCollapsed}
 				filteredChats={filteredChats}

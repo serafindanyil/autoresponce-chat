@@ -28,9 +28,14 @@ export const apiService = createApi({
 	baseQuery: async (args, api, extraOptions) => {
 		const result = await baseQueryWithNoContentHandler(args, api, extraOptions);
 
-		// Handle 204 No Content - не вважати помилкою
+		// Handle 204 No Content - повертаємо null як успішний результат
 		if (result.meta?.response?.status === 204) {
-			return { data: undefined };
+			return { data: null };
+		}
+
+		// Handle 201 Created without body
+		if (result.meta?.response?.status === 201 && !result.data) {
+			return { data: null };
 		}
 
 		return result;

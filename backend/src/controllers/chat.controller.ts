@@ -3,6 +3,28 @@ import type { Request, Response } from "express";
 import * as chatService from "@/services/chat.service";
 import { sendChatPatch } from "@/services/chat-sync.service";
 
+export async function createChatHandler(
+	req: Request,
+	res: Response
+): Promise<void> {
+	if (!req.user) {
+		res.status(401).json({ message: "Unauthorized" });
+		return;
+	}
+
+	const ownerId = new Types.ObjectId(req.user.id);
+
+	const chat = await chatService.createChat({
+		ownerId,
+		firstName: req.body.firstName,
+		lastName: req.body.lastName,
+		metadata: req.body.metadata,
+	});
+
+	await sendChatPatch(req.user.id, chat._id.toString());
+	res.status(201).json(chat.toObject());
+}
+
 export async function updateChatHandler(
 	req: Request,
 	res: Response
