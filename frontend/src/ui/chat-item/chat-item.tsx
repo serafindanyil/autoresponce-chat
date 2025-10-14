@@ -1,4 +1,3 @@
-import clsx from "clsx";
 import { cva } from "class-variance-authority";
 
 import Box from "@/ui/box/box";

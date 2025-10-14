@@ -1,5 +1,4 @@
 import Box from "@/ui/box/box";
-import IconUser from "@/ui/icon-user/icon-user";
 import ButtonNewChat from "@/components/button-new-chat/button-new-chat";
 
 const SidebarAddChatPanel = () => {

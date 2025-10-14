@@ -1,4 +1,10 @@
-import CardAuth from "@/modules/card-login/card-auth";
+"use client";
+
+import dynamic from "next/dynamic";
+
+const CardAuth = dynamic(() => import("@/modules/card-login/card-auth"), {
+	ssr: false,
+});
 
 const AuthPage = () => {
 	return (
