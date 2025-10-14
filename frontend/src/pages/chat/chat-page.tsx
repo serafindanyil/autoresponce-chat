@@ -1,6 +1,6 @@
 import Chat from "@/modules/chat/chat";
 
-const HomePage = () => {
+const ChatPage = () => {
 	return (
 		<div className="flex h-full min-h-full w-full min-w-0">
 			<Chat />
@@ -8,4 +8,4 @@ const HomePage = () => {
 	);
 };
 
-export default HomePage;
+export default ChatPage;
