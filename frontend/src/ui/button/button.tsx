@@ -1,7 +1,7 @@
 import { cva } from "class-variance-authority";
 import clsx from "clsx";
 
-type ButtonProps = {
+type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 	children: React.ReactNode;
 	className?: string;
 	size?: "sm" | "md" | "bg";
@@ -30,9 +30,11 @@ const BUTTON_CLASS = cva(
 	}
 );
 
-const Button = ({ children, className, size, state }: ButtonProps) => {
+const Button = ({ children, className, size, state, ...rest }: ButtonProps) => {
 	return (
-		<button className={clsx(BUTTON_CLASS({ size, state }), className)}>
+		<button
+			{...rest}
+			className={clsx(BUTTON_CLASS({ size, state }), className)}>
 			{children}
 		</button>
 	);
