@@ -1,4 +1,6 @@
-import ChatItem from "@/ui/chat-item/chat-item";
+import clsx from "clsx";
+
+import ChatItem from "@/components/chat-item/chat-item";
 
 const CHATS_ARRAY = [
 	{
@@ -25,9 +27,17 @@ const CHATS_ARRAY = [
 	},
 ];
 
-const SidebarChatsPanel = () => {
+type SidebarChatsPanelProps = {
+	collapsed: boolean;
+};
+
+const SidebarChatsPanel = ({ collapsed }: SidebarChatsPanelProps) => {
 	return (
-		<section className="flex flex-col items-start">
+		<section
+			className={clsx(
+				"flex flex-col items-start cursor-pointer",
+				collapsed && "items-center"
+			)}>
 			{CHATS_ARRAY.map((chat) => (
 				<ChatItem
 					key={chat.id}
@@ -36,6 +46,7 @@ const SidebarChatsPanel = () => {
 					lastMessage={chat.lastMessage}
 					time={chat.time}
 					updates={chat.updates ?? undefined}
+					collapsed={collapsed}
 				/>
 			))}
 		</section>

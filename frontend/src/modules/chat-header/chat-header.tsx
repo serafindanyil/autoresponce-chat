@@ -12,7 +12,7 @@ const ChatHeader = () => {
 			<Box className="flex items-center justify-between bg-muted/30 w-full">
 				<div className="flex gap-4 items-center">
 					<IconUser state="active" userName={[FIRTS_NAME, LAST_NAME]} />
-					<h2 className="text-lg font-bold">{`${FIRTS_NAME} ${LAST_NAME}`}</h2>
+					<h2 className="text-sm xl:text-lg font-bold">{`${FIRTS_NAME} ${LAST_NAME}`}</h2>
 				</div>
 				<div className="flex gap-2">
 					<ButtonEdit />

@@ -2,6 +2,8 @@ import { cva } from "class-variance-authority";
 
 import Box from "@/ui/box/box";
 import UserIcon from "@/ui/icon-user/icon-user";
+import clsx from "clsx";
+import UpdatesBadge from "@/ui/updates-badge/updates-badge";
 
 type ChatItemProps = {
 	firstName: string;
@@ -10,6 +12,7 @@ type ChatItemProps = {
 	lastMessage?: string;
 	updates?: number;
 	state?: "default" | "active";
+	collapsed?: boolean;
 };
 
 const CHAT_ITEM_CLASS = cva(
@@ -20,9 +23,14 @@ const CHAT_ITEM_CLASS = cva(
 				default: "bg-transparent hover:bg-muted/10",
 				active: "bg-muted/50",
 			},
+			collapsed: {
+				true: "justify-center",
+				false: "justify-start",
+			},
 		},
 		defaultVariants: {
 			state: "default",
+			collapsed: false,
 		},
 	}
 );
@@ -34,13 +42,23 @@ const ChatItem = ({
 	lastMessage,
 	updates = undefined,
 	state,
+	collapsed,
 }: ChatItemProps) => {
+	const Tag = collapsed ? "div" : Box;
+
 	return (
-		<Box className={CHAT_ITEM_CLASS({ state })}>
-			<div>
+		<Tag className={CHAT_ITEM_CLASS({ state, collapsed })}>
+			<div className="relative">
 				<UserIcon userName={[firstName, lastName]} />
+				{updates && collapsed && (
+					<UpdatesBadge
+						updates={updates}
+						className="absolute -top-1 -right-1 border-2 border-surface"
+					/>
+				)}
 			</div>
-			<div className="w-full space-y-1">
+			<div
+				className={clsx(collapsed && "hidden", "flex flex-col gap-1 w-full")}>
 				<div className="flex justify-between">
 					<h4 className="font-semibold text-sm">{`${firstName} ${lastName}`}</h4>
 					<span className="text-xs text-muted-foreground">{time}</span>
@@ -49,14 +67,10 @@ const ChatItem = ({
 					<p className="text-xs text-muted-foreground self-end truncate">
 						{lastMessage ? lastMessage : "No messages yet"}
 					</p>
-					{updates && (
-						<span className="font-semibold text-xs bg-primary px-2 h-5 leading-5 rounded">
-							{updates}
-						</span>
-					)}
+					{updates && <UpdatesBadge updates={updates} />}
 				</div>
 			</div>
-		</Box>
+		</Tag>
 	);
 };
 

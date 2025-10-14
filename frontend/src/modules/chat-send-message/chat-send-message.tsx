@@ -2,7 +2,7 @@ import Box from "@/ui/box/box";
 import Input from "@/ui/input/input";
 import Button from "@/ui/button/button";
 
-import { Search } from "lucide-react";
+import { Send } from "lucide-react";
 
 const ChatSendMessage = () => {
 	return (
@@ -10,7 +10,7 @@ const ChatSendMessage = () => {
 			<Box className="flex w-full items-stretch gap-2 bg-muted/30 border-t border-b-0">
 				<Input placeholder="Type your message..." className="w-full" />
 				<Button size="md" state="active" className="">
-					<Search size={18} />
+					<Send size={18} />
 				</Button>
 			</Box>
 		</header>
