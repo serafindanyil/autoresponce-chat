@@ -10,14 +10,18 @@ type ButtonEditProps = {
 	currentLastName: string;
 };
 
-const ButtonEdit = ({ chatId, currentFirstName, currentLastName }: ButtonEditProps) => {
+const ButtonEdit = ({
+	chatId,
+	currentFirstName,
+	currentLastName,
+}: ButtonEditProps) => {
 	const [updateChat, { isLoading }] = useUpdateChatMutation();
 
 	const handleEdit = async () => {
 		// TODO: Add modal/form for editing
 		const first = prompt("Enter first name:", currentFirstName);
 		const last = prompt("Enter last name:", currentLastName);
-		
+
 		if (first || last) {
 			try {
 				await updateChat({

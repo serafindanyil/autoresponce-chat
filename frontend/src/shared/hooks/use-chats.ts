@@ -7,9 +7,9 @@ export const useChats = () => {
 	const isConnected = useSelector((state: RootState) => state.chat.isConnected);
 
 	const chatsList = Object.values(chats);
-	
+
 	const getChatMessages = (chatId: string) => messages[chatId] || [];
-	
+
 	const getChat = (chatId: string) => chats[chatId];
 
 	return {

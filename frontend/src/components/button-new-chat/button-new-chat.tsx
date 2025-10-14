@@ -14,7 +14,7 @@ const ButtonNewChat = () => {
 		// For now, using prompt as a simple example
 		const first = prompt("Enter first name:");
 		const last = prompt("Enter last name:");
-		
+
 		if (first && last) {
 			try {
 				await createChat({
