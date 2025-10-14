@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 
-import { GoogleOAuthProvider } from "@react-oauth/google";
-
 import "./globals.css";
+
+import Providers from "./providers";
 
 const inter = Inter({
 	subsets: ["latin"],
@@ -24,10 +24,7 @@ export default function RootLayout({
 	return (
 		<html lang="en">
 			<body className={`${inter.variable} font-sans antialiased`}>
-				<GoogleOAuthProvider
-					clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-					{children}
-				</GoogleOAuthProvider>
+				<Providers>{children}</Providers>
 			</body>
 		</html>
 	);

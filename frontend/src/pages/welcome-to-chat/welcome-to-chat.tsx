@@ -2,8 +2,8 @@ import RobotLogo from "@/components/robot-logo/robot-logo";
 
 const WelcomeToChat = () => {
 	return (
-		<main className="flex items-center justify-center h-screen w-full">
-			<section className="flex flex-col items-center gap-3">
+		<main className="flex items-center justify-center h-screen w-full pl-4 pr-4 md:pl-0 md:pr-0">
+			<section className="flex flex-col items-center gap-3 text-center">
 				<div>
 					<RobotLogo className="self-center" />
 				</div>

@@ -13,9 +13,9 @@ export function createApp(): Express {
 
 	app.use(
 		cors({
-			origin: env.frontendUrl,
+			origin: "*",
 			credentials: true,
-		}),
+		})
 	);
 	app.use(helmet());
 	app.use(cookieParser());

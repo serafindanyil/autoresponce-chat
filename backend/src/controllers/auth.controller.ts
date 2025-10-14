@@ -1,4 +1,5 @@
 import { OAuth2Client, type TokenPayload } from "google-auth-library";
+import axios from "axios";
 import jwt from "jsonwebtoken";
 import type { Request, Response } from "express";
 import { env } from "@/config/env";
@@ -23,8 +24,13 @@ export async function googleAuthCallback(
 		return;
 	}
 
-	if (!payload?.email || !payload.sub) {
-		res.status(400).json({ message: "Invalid Google token" });
+	if (!payload) {
+		res.status(400).json({ message: "Failed to verify Google token" });
+		return;
+	}
+
+	if (!payload.email || !payload.sub) {
+		res.status(400).json({ message: "Invalid Google token payload" });
 		return;
 	}
 
@@ -60,7 +66,7 @@ async function resolveTokenPayload(
 ): Promise<TokenPayload | null | undefined> {
 	if (env.googleTestToken && token === env.googleTestToken) {
 		const issuedAt = Math.floor(Date.now() / 1000);
-		const expiresAt = issuedAt + 60 * 60; // 1 hour lifetime for the synthetic token
+		const expiresAt = issuedAt + 60 * 480; // 8 hour lifetime for the synthetic token
 
 		return {
 			iss: "https://accounts.google.com",
@@ -74,6 +80,16 @@ async function resolveTokenPayload(
 		} as TokenPayload;
 	}
 
+	const payload = await verifyIdToken(token);
+
+	if (payload) {
+		return payload;
+	}
+
+	return fetchUserInfo(token);
+}
+
+async function verifyIdToken(token: string) {
 	if (!env.googleClientId || !env.googleClientSecret) {
 		return null;
 	}
@@ -91,6 +107,27 @@ async function resolveTokenPayload(
 		});
 
 		return ticket.getPayload() ?? undefined;
+	} catch (error) {
+		return undefined;
+	}
+}
+
+async function fetchUserInfo(token: string) {
+	try {
+		const { data } = await axios.get<
+			Pick<TokenPayload, "email" | "name" | "sub" | "picture">
+		>("https://www.googleapis.com/oauth2/v3/userinfo", {
+			headers: {
+				Authorization: `Bearer ${token}`,
+			},
+		});
+
+		return {
+			email: data.email,
+			name: data.name,
+			sub: data.sub,
+			picture: data.picture,
+		} as TokenPayload;
 	} catch (error) {
 		return undefined;
 	}

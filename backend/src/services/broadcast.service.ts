@@ -46,11 +46,12 @@ async function performBroadcast() {
 		}
 
 		const quote = await fetchQuote();
+		const authorName = `${randomChat.firstName} ${randomChat.lastName}`;
 
 		await createMessage({
 			chatId: randomChat._id.toString(),
 			text: `${quote.content} — ${quote.author}`,
-			authorName: "Auto Bot",
+			authorName,
 			isBot: true,
 		});
 
@@ -58,7 +59,10 @@ async function performBroadcast() {
 			randomChat.ownerId.toString(),
 			randomChat._id.toString()
 		);
-		logInfo("Broadcast message sent", { chatId: randomChat._id });
+		logInfo("Broadcast message sent", {
+			chatId: randomChat._id,
+			authorName,
+		});
 	} catch (error) {
 		logError("Failed to broadcast message", { error });
 	}

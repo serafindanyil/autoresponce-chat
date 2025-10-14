@@ -81,6 +81,14 @@ Exchanges a Google ID token for a signed JWT and user payload. Requires Google O
 
 > All subsequent REST and socket requests must include the JWT using `Authorization: Bearer <token>` or the Socket.IO auth handshake described below.
 
+### `POST /api/auth/logout`
+
+Invalidates the caller session and disconnects active sockets.
+
+- **Response 204**: No body.
+- **Headers**: Requires `Authorization: Bearer <token>`.
+- **Notes**: Clients should also disconnect their Socket.IO instance after receiving the 204.
+
 ## Chats
 
 Chats are provisioned automatically for each authenticated user during login. Each seeded chat містить перше привітальне повідомлення, яке надсилає співрозмовник-бот. There is currently no REST endpoint to create additional chats; use the update and delete operations to manage metadata.
@@ -103,6 +111,36 @@ Deletes a chat by identifier.
 - **Failure Codes**
   - `400`: Invalid `chatId` format.
   - `404`: Chat not found.
+
+### `POST /api/chats`
+
+Creates a new chat with the supplied profile metadata.
+
+- **Request Body**
+  ```json
+  {
+  	"firstName": "Nikola",
+  	"lastName": "Tesla",
+  	"metadata": {
+  		"avatarUrl": "https://example.com/avatar.png"
+  	}
+  }
+  ```
+- **Response 201**
+  ```json
+  {
+  	"_id": "<chatId>",
+  	"ownerId": "<userId>",
+  	"firstName": "Nikola",
+  	"lastName": "Tesla",
+  	"metadata": { "avatarUrl": "https://example.com/avatar.png" },
+  	"createdAt": "2025-01-01T00:00:00.000Z",
+  	"updatedAt": "2025-01-01T00:00:00.000Z"
+  }
+  ```
+- **Failure Codes**
+  - `400`: Validation errors.
+  - `409`: Chat with the same participant already exists.
 
 ### `POST /api/chats/:chatId/messages`
 
@@ -229,3 +267,18 @@ Used for system-wide notices (e.g., broadcasting auto bot status toggles). Paylo
 ### `toggle:autoBot`
 
 Client-emitted event to enable or disable scheduled broadcast messages. Send `true` or `false` as the payload; the server replies with a `notification` event indicating the current state.
+
+### Socket Patch Semantics
+
+The `chats:patch` event payload reflects real-time changes:
+
+- **Removed Chat Payload**: `{ "chatId": "<chatId>", "removed": true }`
+- **Removed Message Payload**:
+  ```json
+  {
+  	"chatId": "<chatId>",
+  	"messageId": "<messageId>",
+  	"removed": true
+  }
+  ```
+- **Message Upsert Payload**: Emits the full message document whenever text changes.

@@ -61,6 +61,6 @@ export const env = {
 		);
 	},
 	get broadcastIntervalMs(): number {
-		return Number(process.env.BROADCAST_INTERVAL_MS ?? 15000);
+		return Number(process.env.BROADCAST_INTERVAL_MS ?? 3000);
 	},
 };
