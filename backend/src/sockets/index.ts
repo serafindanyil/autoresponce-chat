@@ -5,9 +5,14 @@ import { registerSocketHandlers } from "@/sockets/socket.handlers";
 import { env } from "@/config/env";
 
 export function createSocketServer(httpServer: Server): SocketIOServer {
+	const allowedOrigins = [env.frontendUrl, "https://*.onrender.com"];
+
+	if (process.env.NODE_ENV === "development") {
+		allowedOrigins.push("http://localhost:3000");
+	}
 	const io = new SocketIOServer(httpServer, {
 		cors: {
-			origin: env.frontendUrl,
+			origin: allowedOrigins,
 			credentials: true,
 		},
 	});

@@ -1,7 +1,7 @@
 import { io, Socket } from "socket.io-client";
 import type { ChatPatchEvent, ChatWithMessages } from "@/shared/types";
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL as string;
 
 export type SocketEventHandlers = {
 	onBootstrap: (data: ChatWithMessages[]) => void;
