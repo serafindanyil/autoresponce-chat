@@ -35,7 +35,7 @@ export const apiService = createApi({
 
 		return result;
 	},
-	tagTypes: ["Chat", "Message"],
+	// No tagTypes needed - all data comes from Socket.IO
 	endpoints: (builder) => ({
 		// Auth endpoints
 		logout: builder.mutation<void, void>({
@@ -52,7 +52,7 @@ export const apiService = createApi({
 				method: "POST",
 				body,
 			}),
-			invalidatesTags: ["Chat"],
+			// No invalidatesTags - data comes via Socket.IO
 		}),
 
 		updateChat: builder.mutation<
@@ -64,9 +64,7 @@ export const apiService = createApi({
 				method: "PUT",
 				body: data,
 			}),
-			invalidatesTags: (_result, _error, { chatId }) => [
-				{ type: "Chat", id: chatId },
-			],
+			// No invalidatesTags - data comes via Socket.IO
 		}),
 
 		deleteChat: builder.mutation<void, string>({
@@ -74,9 +72,7 @@ export const apiService = createApi({
 				url: `/chats/${chatId}`,
 				method: "DELETE",
 			}),
-			invalidatesTags: (_result, _error, chatId) => [
-				{ type: "Chat", id: chatId },
-			],
+			// No invalidatesTags - data comes via Socket.IO
 		}),
 
 		// Message endpoints
@@ -89,9 +85,7 @@ export const apiService = createApi({
 				method: "POST",
 				body: data,
 			}),
-			invalidatesTags: (_result, _error, { chatId }) => [
-				{ type: "Message", id: chatId },
-			],
+			// No invalidatesTags - data comes via Socket.IO
 		}),
 
 		updateMessage: builder.mutation<
@@ -103,9 +97,7 @@ export const apiService = createApi({
 				method: "PUT",
 				body: data,
 			}),
-			invalidatesTags: (_result, _error, { messageId }) => [
-				{ type: "Message", id: messageId },
-			],
+			// No invalidatesTags - data comes via Socket.IO
 		}),
 
 		deleteMessage: builder.mutation<void, string>({
@@ -113,9 +105,7 @@ export const apiService = createApi({
 				url: `/messages/${messageId}`,
 				method: "DELETE",
 			}),
-			invalidatesTags: (_result, _error, messageId) => [
-				{ type: "Message", id: messageId },
-			],
+			// No invalidatesTags - data comes via Socket.IO
 		}),
 	}),
 });

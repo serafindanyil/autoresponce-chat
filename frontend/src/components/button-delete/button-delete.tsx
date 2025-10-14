@@ -5,6 +5,7 @@ import Button from "@/ui/button/button";
 import ConfirmDialog from "@/ui/confirm-dialog/confirm-dialog";
 import { Trash } from "lucide-react";
 import { useDeleteChatMutation } from "@/shared/services/api.service";
+import { getErrorMessage } from "@/utils/error-handler";
 
 type ButtonDeleteProps = {
 	chatId: string;
@@ -15,14 +16,19 @@ type ButtonDeleteProps = {
 const ButtonDelete = ({ chatId, chatName, onSuccess }: ButtonDeleteProps) => {
 	const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 	const [deleteChat, { isLoading }] = useDeleteChatMutation();
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	const handleConfirm = async () => {
+		setErrorMessage(null);
+
 		try {
 			await deleteChat(chatId).unwrap();
 			setIsConfirmOpen(false);
 			onSuccess?.();
-		} catch (error) {
-			console.error("Failed to delete chat:", error);
+		} catch (err) {
+			const errorMsg = getErrorMessage(err);
+			setErrorMessage(errorMsg);
+			console.error("Delete chat failed:", err);
 		}
 	};
 
@@ -42,7 +48,11 @@ const ButtonDelete = ({ chatId, chatName, onSuccess }: ButtonDeleteProps) => {
 				onConfirm={handleConfirm}
 				onCancel={() => setIsConfirmOpen(false)}
 				title="Delete Chat"
-				message={`Are you sure you want to delete your conversation with ${chatName}? This action cannot be undone.`}
+				message={
+					errorMessage
+						? errorMessage
+						: `Are you sure you want to delete your conversation with ${chatName}? This action cannot be undone.`
+				}
 				confirmText="Delete"
 				cancelText="Cancel"
 				isLoading={isLoading}
