@@ -1,3 +1,6 @@
+import clsx from "clsx";
+import { cva } from "class-variance-authority";
+
 import Box from "@/ui/box/box";
 import UserIcon from "@/ui/icon-user/icon-user";
 
@@ -7,7 +10,23 @@ type ChatItemProps = {
 	time: string;
 	lastMessage?: string;
 	updates?: number;
+	state?: "default" | "active";
 };
+
+const CHAT_ITEM_CLASS = cva(
+	"flex gap-4 items-center w-full px-3 py-2 transition-colors duration-200 xl:hover:bg-muted/50 cursor-pointer",
+	{
+		variants: {
+			state: {
+				default: "bg-transparent hover:bg-muted/10",
+				active: "bg-muted/50",
+			},
+		},
+		defaultVariants: {
+			state: "default",
+		},
+	}
+);
 
 const ChatItem = ({
 	firstName,
@@ -15,15 +34,16 @@ const ChatItem = ({
 	time,
 	lastMessage,
 	updates = undefined,
+	state,
 }: ChatItemProps) => {
 	return (
-		<Box className="flex gap-4 items-center w-full">
+		<Box className={CHAT_ITEM_CLASS({ state })}>
 			<div>
 				<UserIcon userName={[firstName, lastName]} />
 			</div>
 			<div className="w-full space-y-1">
 				<div className="flex justify-between">
-					<h4 className="font-semibold text-sm">{`${firstName} ${lastName}`}</h4>
+					<h4 className="font-semibold text-xs">{`${firstName} ${lastName}`}</h4>
 					<span className="text-xs text-muted-foreground">{time}</span>
 				</div>
 				<div className="flex justify-between">
