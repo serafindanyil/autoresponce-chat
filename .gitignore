@@ -70,7 +70,6 @@ logs/
 dump/
 data/
 *.bson
-*.json
 
 # TypeScript (if used)
 *.tsbuildinfo
@@ -81,7 +80,7 @@ jest-html-reporters-*
 test-results/
 
 # Local files
-.env.local
+.env.locaо
 .env.development.local
 .env.test.local
 .env.production.local
