@@ -29,10 +29,10 @@ const getMobileWidth = (viewport: number) => {
 
 export const useSidebar = () => {
 	const { device, isDesktop } = useDevice();
-	const [width, setWidth] = useState(DEFAULT_WIDTH);
+	const [width, setWidth] = useState<number>(DEFAULT_WIDTH);
 	const [isOpen, setIsOpen] = useState(isDesktop);
 	const [isResizing, setIsResizing] = useState(false);
-	const [viewportWidth, setViewportWidth] = useState(() =>
+	const [viewportWidth, setViewportWidth] = useState<number>(() =>
 		typeof window === "undefined" ? DEFAULT_WIDTH : window.innerWidth
 	);
 
