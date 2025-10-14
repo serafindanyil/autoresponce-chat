@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: autoresponce-backend
+    env: node
+    rootDir: backend
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 22.16.0
+      - key: NPM_CONFIG_PRODUCTION
+        value: "false"
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: PORT
+        value: "4000"
+      - key: FRONTEND_URL
+        sync: false
