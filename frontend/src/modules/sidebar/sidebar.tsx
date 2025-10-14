@@ -43,7 +43,10 @@ const Sidebar = () => {
 				<SidebarSearchChat value={searchQuery} onChange={setSearchQuery} />
 			)}
 			{!isCollapsed && <SidebarAddChatPanel />}
-			<SidebarChatsPanel collapsed={isCollapsed} filteredChats={filteredChats} />
+			<SidebarChatsPanel
+				collapsed={isCollapsed}
+				filteredChats={filteredChats}
+			/>
 		</div>
 	);
 

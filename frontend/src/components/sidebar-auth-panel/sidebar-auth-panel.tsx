@@ -3,7 +3,7 @@
 import clsx from "clsx";
 
 import Box from "@/ui/box/box";
-import IconUser from "@/ui/icon-user/icon-user";
+import ButtonAccount from "@/components/button-account/button-account";
 import ButtonLogin from "@/components/button-login/button-login";
 
 type SidebarAuthPanelProps = {
@@ -25,9 +25,7 @@ const SidebarAuthPanel = ({ collapsed }: SidebarAuthPanelProps) => {
 						collapsed ? "flex-col gap-3" : "gap-4"
 					)}>
 					{!collapsed && <ButtonLogin />}
-					<div>
-						<IconUser state="active" size={"md"} />
-					</div>
+					<ButtonAccount size="md" />
 				</div>
 			</Box>
 		</section>

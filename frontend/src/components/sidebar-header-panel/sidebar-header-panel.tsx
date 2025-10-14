@@ -2,8 +2,6 @@ import clsx from "clsx";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 import Box from "@/ui/box/box";
-import IconUser from "@/ui/icon-user/icon-user";
-import ButtonLogin from "@/components/button-login/button-login";
 
 type SidebarHeaderPanelProps = {
 	collapsed: boolean;

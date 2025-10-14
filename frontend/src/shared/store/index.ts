@@ -48,3 +48,5 @@ export type RootState = ReturnType<AppStore["getState"]>;
 export type AppDispatch = AppStore["dispatch"];
 
 export const createPersistor = (store: AppStore) => persistStore(store);
+
+export { useAppDispatch, useAppSelector } from "./hooks";

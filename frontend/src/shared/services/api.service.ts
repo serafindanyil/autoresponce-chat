@@ -11,18 +11,30 @@ import type { RootState } from "@/shared/store";
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
 
+// Custom baseQuery that handles 204 No Content responses
+const baseQueryWithNoContentHandler = fetchBaseQuery({
+	baseUrl: `${BASE_URL}/api`,
+	prepareHeaders: (headers, { getState }) => {
+		const token = (getState() as RootState).auth.token;
+		if (token) {
+			headers.set("Authorization", `Bearer ${token}`);
+		}
+		return headers;
+	},
+});
+
 export const apiService = createApi({
 	reducerPath: "api",
-	baseQuery: fetchBaseQuery({
-		baseUrl: `${BASE_URL}/api`,
-		prepareHeaders: (headers, { getState }) => {
-			const token = (getState() as RootState).auth.token;
-			if (token) {
-				headers.set("Authorization", `Bearer ${token}`);
-			}
-			return headers;
-		},
-	}),
+	baseQuery: async (args, api, extraOptions) => {
+		const result = await baseQueryWithNoContentHandler(args, api, extraOptions);
+
+		// Handle 204 No Content - не вважати помилкою
+		if (result.meta?.response?.status === 204) {
+			return { data: undefined };
+		}
+
+		return result;
+	},
 	tagTypes: ["Chat", "Message"],
 	endpoints: (builder) => ({
 		// Auth endpoints
