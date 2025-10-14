@@ -1,22 +1,34 @@
 "use client";
 
-import { useGoogleLogin } from "@react-oauth/google";
-import { FaGoogle } from "react-icons/fa";
-import Button from "@/ui/button/button";
 import axios from "axios";
 
+import { useGoogleLogin } from "@react-oauth/google";
+import { useRouter } from "next/navigation";
+import { FaGoogle } from "react-icons/fa";
+
+import Button from "@/ui/button/button";
+
 const ButtonAuthGoogle = () => {
+	const router = useRouter();
+
 	const login = useGoogleLogin({
 		onSuccess: async (response) => {
 			try {
 				const token = response.access_token;
 
-				const res = await axios.post("http://localhost:4000/api/auth/google", {
-					token,
-				});
+				console.log("Login success:", token);
 
-				console.log("Login success:", res.data);
-				// тут можна зберегти токен у localStorage або змінити стан авторизації
+				// const { data } = await axios.post(
+				// 	"http://localhost:4000/api/auth/google",
+				// 	{
+				// 		token,
+				// 	}
+				// );
+
+				// if (data?.token) {
+				// }
+
+				router.push("/");
 			} catch (err) {
 				console.error(" Backend error:", err);
 			}

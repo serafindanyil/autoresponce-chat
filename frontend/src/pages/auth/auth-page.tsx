@@ -8,7 +8,7 @@ const CardAuth = dynamic(() => import("@/modules/card-login/card-auth"), {
 
 const AuthPage = () => {
 	return (
-		<main className="flex min-h-screen items-center justify-center">
+		<main className="flex min-h-screen items-center justify-center pl-6 pr-6 md:pl-0 md:pr-0">
 			<CardAuth />
 		</main>
 	);
